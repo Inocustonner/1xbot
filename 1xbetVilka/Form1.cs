@@ -99,6 +99,7 @@ namespace _1xbetVilka
                 {
                     Invoke((MethodInvoker)delegate () { textBox3.Text = "Работаю..."; });
 
+                    var url = ;
 
                     var txt = wb.DownloadString(
                         "https://1xstavka.ru/LiveFeed/Get1x2_VZip?sports=3&count=50&mode=4&country=2&partner=51");//&tf=60&tz=2 //sports2
