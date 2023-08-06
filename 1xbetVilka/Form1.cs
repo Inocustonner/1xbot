@@ -6,8 +6,6 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
 
 namespace _1xbetVilka
 {
@@ -34,7 +32,7 @@ namespace _1xbetVilka
                 var usets = File.ReadAllText(usersets).Split(';');
                 textBox1.Text = usets[0];
                 textBox12.Text = usets[1];
-
+                textBox5.Text = usets[2];
             }
         }
 
@@ -81,17 +79,11 @@ namespace _1xbetVilka
 
             linksold = File.ReadAllText(path);
 
-            File.WriteAllText(usersets, usid1 + ";" + textBox12.Text);
-
-            var sports1 = "";
-            var sports2 = "";
+            File.WriteAllText(usersets, usid1 + ";" + textBox12.Text + ";" + textBox5.Text);
 
             var ligas_set_inc = textBox4.Text.Split(',');
             var ligas_set_ex = textBox2.Text.Split(',');
 
-            //if (checkBox1.Checked) sports = "6";
-            //if (checkBox2.Checked) sports = "200";
-            //if (checkBox1.Checked && checkBox2.Checked) sports = "6,200";
 
             while (f)
             {
@@ -99,15 +91,13 @@ namespace _1xbetVilka
                 {
                     Invoke((MethodInvoker)delegate () { textBox3.Text = "Работаю..."; });
 
-                    var url = ;
-
+                    var domain = textBox5.Text;
+                    var api = "service-api";
+                    
                     var txt = wb.DownloadString(
-                        "https://1xstavka.ru/LiveFeed/Get1x2_VZip?sports=3&count=50&mode=4&country=2&partner=51");//&tf=60&tz=2 //sports2
-                        //https://1xstavka.ru/LiveFeed/Get1x2_VZip?sports=3&count=50&mode=4&country=2&partner=25&getEmpty=true&noFilterBlockEvent=true sports2
-                        // //&antisports=188//&getEmpty=true&noFilterBlockEvent=true
-                        //200 ,200
-                    //if (txt.Contains(",\"CE\":1")) { txt = txt.Replace(",\"CE\":1", ""); }
+                        $"https://{domain}/{api}/LiveFeed/Get1x2_VZip?sports=3&count=50&mode=4&country=2&partner=51");
 
+                    Console.WriteLine(txt);
                     var s = txt.Split(new string[] { "\"AE\"" }, StringSplitOptions.None); //AE
      
                     for (int i = 1; i < s.Length; i++)
@@ -156,14 +146,6 @@ namespace _1xbetVilka
                             }
                         }
 
-
-                        //,{"B":true,"C":1.85
-
-                        //,{"C":1.9,"CE":1,"G":17,"P":187.5,"T":10
-                        //var p1 = SubstringRev("\"C\":", block, "\"T\":1}").Split(',')[0]; if (p1 == "") { p1 = "0"; }
-                        //var p2 = SubstringRev("\"C\":", block, "\"T\":3}").Split(',')[0]; if (p2 == "") { p2 = "0"; }
-                        //var x = SubstringRev("\"C\":", block, "\"T\":2}").Split(',')[0]; if (x == "") { x = "0"; }
-
                         var link =  comm1 + "-" + comm2 + " "; //liga + " " +
 
                         //MessageBox.Show(link + tm + " " + par);
@@ -197,37 +179,15 @@ namespace _1xbetVilka
                                 }
                             }   // }
 
-                            //txt = wb.DownloadString("https://1xstavka.ru/LiveFeed/GetGameZip?id=" + cod +
-                            // "&lng=ru&cfview=0&isSubGames=true&GroupEvents=true&allEventsGroupSubGames=true&countevents=500&partner=25");
-                            //MessageBox.Show(liga + " " + liga_bool.ToString());
-                            /*
-                            var score = GetScoreSumm(block);
-                            //MessageBox.Show(score);
-
-                            //var tm2 = -100.0; var tm2str = ""; var tb25str = "";
-                            var par = "0"; //var tm = "0";
-                            if (block.Contains(",\"T\":10}"))
-                            {
-                                //,\"G\":17,\"P\":2
-                                par = SubstringRev(":", block, ",\"T\":10}");
-                                tm = SubstringRev(":", block, ",\"G\":17,\"P\":" + par +",\"T\":10}");
-                                //tm2 = Convert.ToDouble(tm2str);
-                            }
-                            */
-
-
-                            //MessageBox.Show(score + " " + tm + " " + link + " " + par);
-                            //var oz = "ОЗ(нет) ";
-                            //!linksold.Contains(cod + " ") && 
                            
-                            if (liga_bool && par != "" && Convert.ToInt32(game_time) >= (int)numericUpDown4.Value) 
+                            if (liga_bool && par != "" && Convert.ToInt32(game_time) >= (int)numericUpDown4.Value)
                             {
                                 //MessageBox.Show(comm1 + " " + liga_bool + " " + game_time);
                                 //private void MakeStavka(string kf, string link, string type,
                                 //string game_id, string domen, string SSID, string usid, string par = "0")
                                 var summ = numericUpDown2.Text;
                                 var otchet_str = "ТМ" + par + " " + tm + " " + link + " " + summ;
-                                var stavka = MakeStavka(wb, tm, otchet_str, "10", cod, "1xstavka.ru", textBox12.Text, usid1, summ, par);
+                                var stavka = MakeStavka(wb, tm, otchet_str, "10", cod, domain, textBox12.Text, usid1, summ, par);
                             }
 
                         }
@@ -251,6 +211,7 @@ namespace _1xbetVilka
                         if (!f) { break; }
                     }
 
+                    Thread.Sleep(1000);
                 }
                 catch (Exception)
                 {
@@ -357,9 +318,8 @@ namespace _1xbetVilka
                     //MessageBox.Show(data);
                     if (!f) { break; }
 
-                    var response = wb.UploadString("https://" + domen + "/datalinelive/putbetscommon", "POST",
-                    data);
-
+                    var response = wb.UploadString($"https://{domen}/web-api/datalinelive/putbetscommon", "POST", data);
+                    Console.WriteLine("response");
                     if (!f) { break; }
 
                     File.WriteAllText("txt.txt", data);
