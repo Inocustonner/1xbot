@@ -211,7 +211,7 @@ namespace _1xbetVilka
                         if (!f) { break; }
                     }
 
-                    Thread.Sleep(1000);
+                    Thread.Sleep(500);
                 }
                 catch (Exception)
                 {
