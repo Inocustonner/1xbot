@@ -57,6 +57,7 @@ namespace _1xbetVilka
             this.textBox4 = new System.Windows.Forms.TextBox();
             this.label14 = new System.Windows.Forms.Label();
             this.textBox5 = new System.Windows.Forms.TextBox();
+            this.label16 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).BeginInit();
@@ -143,7 +144,7 @@ namespace _1xbetVilka
             this.numericUpDown2.TabIndex = 85;
             this.numericUpDown2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.numericUpDown2.Value = new decimal(new int[] {
-            20,
+            10,
             0,
             0,
             0});
@@ -361,11 +362,22 @@ namespace _1xbetVilka
             this.textBox5.Size = new System.Drawing.Size(166, 20);
             this.textBox5.TabIndex = 113;
             // 
+            // label16
+            // 
+            this.label16.AutoSize = true;
+            this.label16.Location = new System.Drawing.Point(338, 96);
+            this.label16.Name = "label16";
+            this.label16.Size = new System.Drawing.Size(185, 13);
+            this.label16.TabIndex = 114;
+            this.label16.Text = "Внимание! Домен мог измениться";
+            this.label16.Click += new System.EventHandler(this.label15_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(535, 385);
+            this.Controls.Add(this.label16);
             this.Controls.Add(this.textBox5);
             this.Controls.Add(this.label14);
             this.Controls.Add(this.textBox4);
@@ -435,6 +447,7 @@ namespace _1xbetVilka
         private System.Windows.Forms.TextBox textBox4;
         private System.Windows.Forms.Label label14;
         private System.Windows.Forms.TextBox textBox5;
+        private System.Windows.Forms.Label label16;
     }
 }
 

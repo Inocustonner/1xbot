@@ -66,12 +66,12 @@ namespace _1xbetVilka {
                     Invoke((MethodInvoker)delegate () { textBox3.Text = "Работаю..."; });
 
                     var domain = textBox5.Text;
-                    var txt = wb.DownloadString($"https://{domain}/service-api/LiveFeed/Get1x2_VZip?sports=3&count=50&mode=4&country=2&partner=51");
+                    var txt = wb.DownloadString($"https://{domain}/service-api/LiveFeed/Get1x2_VZip?sports=3&count=50&mode=4&country=2");
                     var s = txt.Split(new string[] { "\"AE\"" }, StringSplitOptions.None);
 
                     for (int i = 1; i < s.Length; i++) {
-                        if (!f) { 
-                            break; 
+                        if (!f) {
+                            break;
                         }
 
                         var block = s[i];
@@ -84,7 +84,7 @@ namespace _1xbetVilka {
 
                         if (block.Contains(",\"FS\":{")) {
                             var total_score = Substring(",\"FS\":{", block, "}");
-                            var score1 = "0"; 
+                            var score1 = "0";
                             var score2 = "0";
 
                             if (total_score != "") {
@@ -124,6 +124,8 @@ namespace _1xbetVilka {
                                         break;
                                     }
                                 }
+                            } else {
+                                liga_bool = true;
                             }
 
                             if (ligas_set_ex[0] != "") {
@@ -152,17 +154,16 @@ namespace _1xbetVilka {
                         break;
                     }
 
-                    for (int j = 5; j >= 1; j--)
-                    {
+                    for (int j = 5; j >= 1; j--) {
                         this.Invoke((MethodInvoker)delegate () { textBox3.Text = "Пауза " + j + " сек"; });
-                        if (!f) { 
-                            break; 
+                        if (!f) {
+                            break;
                         }
 
                         Thread.Sleep(1000);
 
-                        if (!f) { 
-                            break; 
+                        if (!f) {
+                            break;
                         }
                     }
 
@@ -218,14 +219,14 @@ namespace _1xbetVilka {
                                ":\"" + summ + "\",\"Lng\":\"ru\",\"UserId\":" + usid + ",\"Vid\":0,\"hash\":\"" + uhash + "\"" +
                                ",\"CfView\":0,\"notWait\":true,\"CheckCf\":1,\"partner\":25" + betGUID + "}}";
 
-                    if (!f) { 
-                        break; 
+                    if (!f) {
+                        break;
                     }
                     OutputDataToFile("response", data);
                     var response = wb.UploadString($"https://{domen}/web-api/datalinelive/putbetscommon", "POST", data);
 
-                    if (!f) { 
-                        break; 
+                    if (!f) {
+                        break;
                     }
 
                     File.WriteAllText("txt.txt", data);
@@ -238,14 +239,14 @@ namespace _1xbetVilka {
                         return false;
                     }
 
-                    if (response.Contains("betGUID")) { 
-                        betGUID = ",\"betGUID\":\"" + Substring("\"betGUID\":\"", response, "\"") + "\""; 
+                    if (response.Contains("betGUID")) {
+                        betGUID = ",\"betGUID\":\"" + Substring("\"betGUID\":\"", response, "\"") + "\"";
                     }
 
                     if (response.Contains("\"waitTime\"")) {
                         var waitTime = Substring("\"waitTime\":", response, "}");
-                        if (waitTime != "") { 
-                            Thread.Sleep(Convert.ToInt32(waitTime) + 100); 
+                        if (waitTime != "") {
+                            Thread.Sleep(Convert.ToInt32(waitTime) + 100);
                         }
                     }
 
@@ -321,7 +322,7 @@ namespace _1xbetVilka {
                         if (blocksc.Contains("S2")) { sc2 = blocksc.Split(':')[1]; }
                     }
                 }
- 
+
                 obsc = sc1 + sc2;
             }
 
@@ -342,7 +343,7 @@ namespace _1xbetVilka {
         }
 
 
-        private void OutputMatchLog(string liga, int score_difference, string command1, string command2, string[] ligas_set_inc, string[] ligas_set_ex)  {
+        private void OutputMatchLog(string liga, int score_difference, string command1, string command2, string[] ligas_set_inc, string[] ligas_set_ex) {
 
             string liga_bool = "Не подходит";
             string score_bool = "Не подходит";
@@ -375,9 +376,12 @@ namespace _1xbetVilka {
             Console.WriteLine($"Разница в счете: {score_difference} - {score_bool}");
             Console.WriteLine($"Команды: {command1} - {command2}");
         }
+
+
         private void OutputBetLog() {
 
         }
+
 
         private void OutputDataToFile(string nameFile, string data) {
             try {
@@ -392,6 +396,5 @@ namespace _1xbetVilka {
                 Console.WriteLine($"Данные занесены в файл {nameFile}");
             }
         }
-
     }
 }
