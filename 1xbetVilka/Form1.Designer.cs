@@ -101,18 +101,18 @@ namespace _1xbetVilka
             // 
             this.textBox9.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.textBox9.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.textBox9.Location = new System.Drawing.Point(12, 249);
+            this.textBox9.Location = new System.Drawing.Point(12, 255);
             this.textBox9.Multiline = true;
             this.textBox9.Name = "textBox9";
             this.textBox9.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textBox9.Size = new System.Drawing.Size(513, 98);
+            this.textBox9.Size = new System.Drawing.Size(637, 149);
             this.textBox9.TabIndex = 81;
             this.textBox9.WordWrap = false;
             // 
             // button1
             // 
             this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.button1.Location = new System.Drawing.Point(165, 353);
+            this.button1.Location = new System.Drawing.Point(229, 410);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 82;
@@ -123,7 +123,7 @@ namespace _1xbetVilka
             // button2
             // 
             this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.button2.Location = new System.Drawing.Point(287, 353);
+            this.button2.Location = new System.Drawing.Point(368, 410);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(63, 23);
             this.button2.TabIndex = 83;
@@ -153,7 +153,7 @@ namespace _1xbetVilka
             // 
             this.label8.AutoSize = true;
             this.label8.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label8.Location = new System.Drawing.Point(324, 10);
+            this.label8.Location = new System.Drawing.Point(448, 10);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(35, 15);
             this.label8.TabIndex = 89;
@@ -163,7 +163,7 @@ namespace _1xbetVilka
             // 
             this.label10.AutoSize = true;
             this.label10.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label10.Location = new System.Drawing.Point(311, 40);
+            this.label10.Location = new System.Drawing.Point(435, 40);
             this.label10.Name = "label10";
             this.label10.Size = new System.Drawing.Size(49, 15);
             this.label10.TabIndex = 93;
@@ -172,7 +172,7 @@ namespace _1xbetVilka
             // textBox12
             // 
             this.textBox12.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.textBox12.Location = new System.Drawing.Point(359, 37);
+            this.textBox12.Location = new System.Drawing.Point(483, 37);
             this.textBox12.Name = "textBox12";
             this.textBox12.Size = new System.Drawing.Size(166, 21);
             this.textBox12.TabIndex = 95;
@@ -181,11 +181,11 @@ namespace _1xbetVilka
             // 
             this.textBox2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.textBox2.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.textBox2.Location = new System.Drawing.Point(12, 182);
+            this.textBox2.Location = new System.Drawing.Point(16, 188);
             this.textBox2.Multiline = true;
             this.textBox2.Name = "textBox2";
             this.textBox2.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textBox2.Size = new System.Drawing.Size(513, 46);
+            this.textBox2.Size = new System.Drawing.Size(637, 46);
             this.textBox2.TabIndex = 98;
             this.textBox2.Text = "НБА,pro";
             // 
@@ -194,7 +194,7 @@ namespace _1xbetVilka
             this.label1.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label1.Location = new System.Drawing.Point(228, 231);
+            this.label1.Location = new System.Drawing.Point(314, 237);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(43, 15);
             this.label1.TabIndex = 99;
@@ -204,7 +204,7 @@ namespace _1xbetVilka
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label2.Location = new System.Drawing.Point(202, 164);
+            this.label2.Location = new System.Drawing.Point(283, 170);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(102, 15);
             this.label2.TabIndex = 100;
@@ -241,7 +241,7 @@ namespace _1xbetVilka
             // textBox8
             // 
             this.textBox8.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.textBox8.Location = new System.Drawing.Point(359, 7);
+            this.textBox8.Location = new System.Drawing.Point(483, 7);
             this.textBox8.Name = "textBox8";
             this.textBox8.Size = new System.Drawing.Size(166, 21);
             this.textBox8.TabIndex = 86;
@@ -329,7 +329,7 @@ namespace _1xbetVilka
             // 
             this.label13.AutoSize = true;
             this.label13.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label13.Location = new System.Drawing.Point(202, 98);
+            this.label13.Location = new System.Drawing.Point(283, 103);
             this.label13.Name = "label13";
             this.label13.Size = new System.Drawing.Size(96, 15);
             this.label13.TabIndex = 110;
@@ -339,17 +339,17 @@ namespace _1xbetVilka
             // 
             this.textBox4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.textBox4.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.textBox4.Location = new System.Drawing.Point(12, 115);
+            this.textBox4.Location = new System.Drawing.Point(16, 121);
             this.textBox4.Multiline = true;
             this.textBox4.Name = "textBox4";
             this.textBox4.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textBox4.Size = new System.Drawing.Size(513, 46);
+            this.textBox4.Size = new System.Drawing.Size(637, 46);
             this.textBox4.TabIndex = 111;
             // 
             // label14
             // 
             this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(317, 74);
+            this.label14.Location = new System.Drawing.Point(441, 74);
             this.label14.Name = "label14";
             this.label14.Size = new System.Drawing.Size(42, 13);
             this.label14.TabIndex = 112;
@@ -357,7 +357,7 @@ namespace _1xbetVilka
             // 
             // textBox5
             // 
-            this.textBox5.Location = new System.Drawing.Point(359, 71);
+            this.textBox5.Location = new System.Drawing.Point(483, 71);
             this.textBox5.Name = "textBox5";
             this.textBox5.Size = new System.Drawing.Size(166, 20);
             this.textBox5.TabIndex = 113;
@@ -365,18 +365,17 @@ namespace _1xbetVilka
             // label16
             // 
             this.label16.AutoSize = true;
-            this.label16.Location = new System.Drawing.Point(338, 96);
+            this.label16.Location = new System.Drawing.Point(462, 96);
             this.label16.Name = "label16";
             this.label16.Size = new System.Drawing.Size(185, 13);
             this.label16.TabIndex = 114;
             this.label16.Text = "Внимание! Домен мог измениться";
-            this.label16.Click += new System.EventHandler(this.label15_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(535, 385);
+            this.ClientSize = new System.Drawing.Size(661, 442);
             this.Controls.Add(this.label16);
             this.Controls.Add(this.textBox5);
             this.Controls.Add(this.label14);

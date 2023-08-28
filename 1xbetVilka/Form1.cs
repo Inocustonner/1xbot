@@ -1,13 +1,30 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Policy;
 using System.Text;
 using System.Threading;
+using System.Web;
 using System.Windows.Forms;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace _1xbetVilka {
+    
+    public struct Match {
+        public string GameId;
+        public string Liga;
+        public string Command1;
+        public string Command2;
+        public int Score1;
+        public int Score2;
+        public int GameTime;
+        public string Coefficient;
+        public string Parameter;
+    }
+
     public partial class Form1 : Form {
         private Thread thr;
         private bool f = true;
@@ -40,12 +57,12 @@ namespace _1xbetVilka {
 
         private void StartStavka() {
             Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
-            WebClient wb = new WebClient();
-            wb.Encoding = Encoding.UTF8;
+            WebClient wc = new WebClient();
+            wc.Encoding = Encoding.UTF8;
             Console.OutputEncoding = Encoding.UTF8;
 
-            wb.Headers.Add("Cookie", "lng=ru; SESSION=" + textBox8.Text);
-            wb.Headers.Add("X-Requested-With", "XMLHttpRequest");
+            wc.Headers.Add("Cookie", "lng=ru; SESSION=" + textBox8.Text);
+            wc.Headers.Add("X-Requested-With", "XMLHttpRequest");
 
             var usid1 = textBox1.Text.Split(':')[0];
 
@@ -57,94 +74,41 @@ namespace _1xbetVilka {
 
             File.WriteAllText(usersets, usid1 + ";" + textBox12.Text + ";" + textBox5.Text);
 
-            var ligas_set_inc = textBox4.Text.Split(',');
-            var ligas_set_ex = textBox2.Text.Split(',');
-
-
             while (f) {
                 try {
                     Invoke((MethodInvoker)delegate () { textBox3.Text = "Работаю..."; });
 
                     var domain = textBox5.Text;
-                    var txt = wb.DownloadString($"https://{domain}/service-api/LiveFeed/Get1x2_VZip?sports=3&count=50&mode=4&country=2");
-                    var s = txt.Split(new string[] { "\"AE\"" }, StringSplitOptions.None);
+                    string url = $"https://{domain}/service-api/LiveFeed/Get1x2_VZip?sports=3&count=50&mode=4&country=2";
 
-                    for (int i = 1; i < s.Length; i++) {
-                        if (!f) {
-                            break;
+                    List<Dictionary<string, string>> matches = GetMatches(wc, url);
+
+                    foreach (var match in matches) {
+
+                        bool matchBool = CheckMatch(match);
+                        Console.WriteLine($"Делаем ставку на этот матч? {matchBool}");
+
+                        if (matchBool) {
+                            string summ = numericUpDown2.Text;
+                            string otchet_str = 
+                                $"ТМ {match["Parameter"]}, К: {match["Coefficient"]} " +
+                                $"{match["Command1"]} - {match["Command2"]} {summ}";
+
+                            Console.WriteLine("Попытка сделать ставку");
+                            
+                            var stavka = MakeStavka(
+                                wc, 
+                                match["Coefficient"], 
+                                otchet_str, 
+                                match["GameId"], 
+                                domain, 
+                                textBox12.Text, 
+                                usid1, 
+                                summ, 
+                                match["Parameter"]);
+                            
                         }
 
-                        var block = s[i];
-                        var cod = Substring("\"I\":", block, ",");
-                        var liga = Substring("\"L\":", block, ",");
-                        var command1 = Substring("\"O1\":", block, ",");
-                        var command2 = Substring("\"O2\":", block, ",");
-                        var game_time = Substring("\"TS\":", block, "}");
-                        var score_difference = 0;
-
-                        if (block.Contains(",\"FS\":{")) {
-                            var total_score = Substring(",\"FS\":{", block, "}");
-                            var score1 = "0";
-                            var score2 = "0";
-
-                            if (total_score != "") {
-                                var score = total_score.Split(',');
-
-                                for (var j = 0; j < score.Length; j++) {
-                                    var block_score = score[j];
-                                    if (!block_score.Contains("S1")) { score1 = block_score.Split(':')[1]; }
-                                    if (!block_score.Contains("S2")) { score2 = block_score.Split(':')[1]; }
-                                }
-                            }
-
-                            score_difference = Math.Abs(Convert.ToInt32(score1) - Convert.ToInt32(score2));
-                        }
-
-                        OutputMatchLog(liga, score_difference, command1, command2, ligas_set_inc, ligas_set_ex);
-
-                        var kfs = block.Split('{');
-                        var tm = ""; var par = "";
-
-                        foreach (var elem in kfs) {
-                            if (elem.Contains("\"T\":10}") && elem.Contains("\"CE\":1,\"G\":17,")) {
-                                par = SubstringRev(":", elem, ",\"T\":10}");
-                                tm = SubstringRev("\"C\":", elem, ",\"CE\":1,\"G\":17,\"P\"");
-                            }
-                        }
-
-                        var link = command1 + "-" + command2 + " ";
-
-                        if ((score_difference >= (int)numericUpDown1.Value && score_difference <= (int)numericUpDown3.Value) && !linksold.Contains(cod)) {
-                            var liga_bool = false;
-
-                            if (ligas_set_inc[0] != "") {
-                                foreach (var liga_elem in ligas_set_inc) {
-                                    if (liga.Contains(liga_elem)) {
-                                        liga_bool = true;
-                                        break;
-                                    }
-                                }
-                            } else {
-                                liga_bool = true;
-                            }
-
-                            if (ligas_set_ex[0] != "") {
-                                foreach (var liga_elem in ligas_set_ex) {
-                                    if (liga.Contains(liga_elem)) {
-                                        liga_bool = false;
-                                        break;
-                                    }
-                                }
-                            }
-                            Console.WriteLine($"Делаем ставку на этот матч? {liga_bool && par != "" && Convert.ToInt32(game_time) >= (int)numericUpDown4.Value}");
-                            if (liga_bool && par != "" && Convert.ToInt32(game_time) >= (int)numericUpDown4.Value) {
-                                var summ = numericUpDown2.Text;
-                                var otchet_str = "ТМ" + par + " " + tm + " " + link + " " + summ;
-
-                                Console.WriteLine("Попытка сделать ставку");
-                                var stavka = MakeStavka(wb, tm, otchet_str, "10", cod, domain, textBox12.Text, usid1, summ, par);
-                            }
-                        }
                         Console.WriteLine(""); // Отделяет разные матчи
                     }
 
@@ -169,40 +133,31 @@ namespace _1xbetVilka {
 
                     Thread.Sleep(500);
                 }
-                catch (Exception) {
-
+                catch (Exception e) {
+                    Console.WriteLine(e);
                 }
             }
         }
 
 
-        private static string Substring(string T_, string ForS, string _T) {
+        private Boolean MakeStavka(WebClient wb, string kf, string link,
+                            string game_id, string domain, string uhash, string usid, string summ, string par = "0") {
 
             try {
-                if (T_.Length == 0 || ForS.Length == 0 || _T.Length == 0) return "";
-                if (!ForS.Contains(T_) || !ForS.Contains(_T)) return "";
+                if (Convert.ToInt32(summ) < 10) {
+                    Console.WriteLine("Ставка не сделана - маленькая ставка");
+                    Invoke((MethodInvoker)delegate () { 
+                        textBox9.AppendText(" Fail Минимальная ставка 10" + Environment.NewLine); 
+                    });
+                    return false;
+                }
 
-                string s = ForS;
-                string str1 = s.Split(new[] { T_ }, StringSplitOptions.None)[1];
-
-                return str1.Split(new[] { _T }, StringSplitOptions.None)[0];
-            }
-            catch (Exception e) {
-                return "";
-            }
-        }
-
-
-        private Boolean MakeStavka(WebClient wb, string kf, string link, string type,
-                            string game_id, string domen, string uhash, string usid, string summ, string par = "0") {
-
-            try {
-                if (Convert.ToInt32(summ) < 20) { summ = "20"; }
-
-                var betGUID = "";
+                string betGUID = "";
                 var txtlink = link + "  TRY ";
 
-                Invoke((MethodInvoker)delegate () { textBox3.Text = "Ставлю..."; });
+                Invoke((MethodInvoker)delegate () { 
+                    textBox3.Text = "Ставлю..."; 
+                });
 
                 this.Invoke((MethodInvoker)delegate () {
                     textBox9.AppendText(txtlink);
@@ -214,24 +169,25 @@ namespace _1xbetVilka {
                     wb.Headers.Add("Accept-Language", "ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3");
 
                     var data = "{\"coupon\":{\"Live\":true,\"Events\":[{\"GameId\":\"" + game_id + "\"," +
-                               "\"Type\":" + type + ",\"Coef\":" + kf + ",\"Param\":" + par + ",\"PV\":null,\"PlayerId\":0," +
+                               "\"Type\":10,\"Coef\":" + kf + ",\"Param\":" + par + ",\"PV\":null,\"PlayerId\":0," +
                                "\"Kind\":1,\"InstrumentId\":0,\"Seconds\":0,\"Price\":0,\"Expired\":0}],\"Summ\"" +
                                ":\"" + summ + "\",\"Lng\":\"ru\",\"UserId\":" + usid + ",\"Vid\":0,\"hash\":\"" + uhash + "\"" +
-                               ",\"CfView\":0,\"notWait\":true,\"CheckCf\":1,\"partner\":25" + betGUID + "}}";
-
-                    if (!f) {
-                        break;
-                    }
-                    OutputDataToFile("response", data);
-                    var response = wb.UploadString($"https://{domen}/web-api/datalinelive/putbetscommon", "POST", data);
-
+                               ",\"CfView\":0,\"notWait\":true,\"CheckCf\":1,\"partner\":25,\"betGUID\":" + betGUID + "}}";
+                    Console.WriteLine($"Попытка: {c+1}");
+                    Console.WriteLine(data);
+                    Console.WriteLine();
                     if (!f) {
                         break;
                     }
 
-                    File.WriteAllText("txt.txt", data);
+                    string url = $"https://{domain}/web-api/datalinelive/putbetscommon";
+                    JObject response = JObject.Parse(wb.UploadString(url, "POST", data));
 
-                    if (response == string.Empty) {
+                    if (!f) {
+                        break;
+                    }
+
+                    if (response.Count == 0) {
                         Invoke((MethodInvoker)delegate () { textBox9.AppendText("Ошибка авторизации!" + Environment.NewLine); });
                         Invoke(new MethodInvoker(Stop));
 
@@ -239,19 +195,15 @@ namespace _1xbetVilka {
                         return false;
                     }
 
-                    if (response.Contains("betGUID")) {
-                        betGUID = ",\"betGUID\":\"" + Substring("\"betGUID\":\"", response, "\"") + "\"";
+                    if ((string)response["Value"]["betGUID"] != null) {
+                        betGUID = (string)response["Value"]["betGUID"];
                     }
 
-                    if (response.Contains("\"waitTime\"")) {
-                        var waitTime = Substring("\"waitTime\":", response, "}");
-                        if (waitTime != "") {
-                            Thread.Sleep(Convert.ToInt32(waitTime) + 100);
-                        }
+                    if ((string)response["Value"]["waitTime"] != null) {
+                        Thread.Sleep((int)response["Value"]["waitTime"] + 100);
                     }
 
-                    if (response.Contains("\"Success\":true") & response.Contains("\"waitTime\":0}"))//
-                    {
+                    if ((bool)response["Success"] == true & (string)response["Value"]["waitTime"] == "0") {
 
                         this.Invoke((MethodInvoker)delegate () {
                             textBox9.AppendText(" OK" + Environment.NewLine);
@@ -260,10 +212,10 @@ namespace _1xbetVilka {
                         linksold += game_id + " ";
 
                         return true;
-                    } else if (!response.Contains("Error\":\"\"")) {
-                        var err = Substring("Error\":\"", response, "\"");
-                        if (!textBox9.Text.Contains(txtlink + " " + err)) {
-                            Invoke((MethodInvoker)delegate () { textBox9.AppendText(" " + err + Environment.NewLine); });
+                    } else if ((string)response["Error"] != "") {
+                        string error = (string)response["Error"];
+                        if (!textBox9.Text.Contains(txtlink + " " + error)) {
+                            Invoke((MethodInvoker)delegate () { textBox9.AppendText(" " + error + Environment.NewLine); });
 
                             Console.WriteLine("Ставка не сделана - код ошибки 2");
                             return false;
@@ -286,60 +238,8 @@ namespace _1xbetVilka {
                 return false;
             }
 
-            Console.WriteLine("Ставка не сделана - код ошибки 5");
+            Console.WriteLine("Ставка не сделана - закончились попытки");
             return false;
-        }
-
-
-        private static string SubstringRev(string T_, string forS, string _T) {
-            try {
-                if (T_.Length == 0 || forS.Length == 0 || _T.Length == 0) return "";
-                if (!forS.Contains(T_) || !forS.Contains(_T)) return "";
-
-                string str1 = forS.Split(new[] { _T }, StringSplitOptions.None)[0];
-                var s = str1.Split(new[] { T_ }, StringSplitOptions.None);
-                return s[s.Length - 1];
-
-
-            }
-            catch (Exception) {
-                return "";
-            }
-        }
-
-
-        private string GetScoreSumm(string txtmatch) {
-            var obsc = "0";
-            if (txtmatch.Contains(",\"FS\":{")) {
-                var obs = Substring(",\"FS\":{", txtmatch, "}"); //"""FS"":{", "}"
-                var sc1 = "0"; var sc2 = "0";
-                if (obs != "") {
-                    var sc = obs.Split(',');
-
-                    for (var j = 0; j < sc.Length; j++) {
-                        var blocksc = sc[j];
-                        if (blocksc.Contains("S1")) { sc1 = blocksc.Split(':')[1]; }
-                        if (blocksc.Contains("S2")) { sc2 = blocksc.Split(':')[1]; }
-                    }
-                }
-
-                obsc = sc1 + sc2;
-            }
-
-            return obsc;
-        }
-
-
-        private void Stop() {
-            f = false;
-            Invoke((MethodInvoker)delegate { textBox3.Text = @"Остановлен."; });
-            File.WriteAllText(path, linksold);
-            button1.Enabled = true;
-        }
-
-
-        private void button2_Click(object sender, EventArgs e) {
-            Stop();
         }
 
 
@@ -378,11 +278,6 @@ namespace _1xbetVilka {
         }
 
 
-        private void OutputBetLog() {
-
-        }
-
-
         private void OutputDataToFile(string nameFile, string data) {
             try {
                 StreamWriter sw = new StreamWriter($"{nameFile}.txt");
@@ -395,6 +290,159 @@ namespace _1xbetVilka {
             finally {
                 Console.WriteLine($"Данные занесены в файл {nameFile}");
             }
+        }
+
+        private bool CheckMatch(Dictionary<string, string> match) {
+            var ligas_set_inc = textBox4.Text.Split(',');
+            var ligas_set_ex = textBox2.Text.Split(',');
+            int scoreDifference = Math.Abs(Int32.Parse(match["Score1"]) - Int32.Parse(match["Score2"]));
+
+            OutputMatchLog(match["Liga"], scoreDifference, match["Command1"], match["Command2"], ligas_set_inc, ligas_set_ex);
+
+            if ((scoreDifference >= (int)numericUpDown1.Value && scoreDifference <= (int)numericUpDown3.Value) && !linksold.Contains(match["GameId"])) {
+                var liga_bool = false;
+
+                if (ligas_set_inc[0] != "") {
+                    foreach (var liga_elem in ligas_set_inc) {
+                        if (match["Liga"].Contains(liga_elem)) {
+                            liga_bool = true;
+                            break;
+                        }
+                    }
+                } else {
+                    liga_bool = true;
+                }
+
+                if (ligas_set_ex[0] != "") {
+                    foreach (var liga_elem in ligas_set_ex) {
+                        if (match["Liga"].Contains(liga_elem)) {
+                            liga_bool = false;
+                            break;
+                        }
+                    }
+                }
+
+                bool matchBool = liga_bool && match["Parameter"] != "" && Int32.Parse(match["GameTime"]) >= (int)numericUpDown4.Value;
+                return matchBool;
+
+            }
+            return false;
+        }
+
+
+        static List<Dictionary<string, string>> GetMatches(WebClient wc, string url) {
+
+            Console.WriteLine("Идет получение матчей");
+
+            JObject json = JObject.Parse(wc.DownloadString(url));
+            List<Dictionary<string, string>> allMatches = new List<Dictionary<string, string>> { };
+
+            foreach (var item in json["Value"]) {
+                Dictionary<string, string> dict = TransformMatch(item);
+                if (dict.Count != 0) {
+                    allMatches.Add(dict);
+                }
+            }
+            Console.WriteLine("\n   Получение матчей завершено");
+            return allMatches;
+        }
+
+        static private Dictionary<string, string> TransformMatch(JToken item) {
+
+            string Liga = (string)item["L"];
+            string GameId = (string)item["I"];
+            string Command1 = (string)item["O1"];
+            string Command2 = (string)item["O2"];
+            string GameTime = (string)item["SC"]["TS"];
+            string Score2 = (string)item["SC"]["FS"]["S2"];
+            string Score1 = (string)item["SC"]["FS"]["S1"];
+
+            List<string> list = SearchParameters(item);
+            string Parameter = list[0];
+            string Coefficient = list[1];
+
+            if (Liga == null) {
+                Console.WriteLine("     Неизвестный матч пропущен " +
+                    "- отсутствует лига");
+                return new Dictionary<string, string> { };
+            } else if (Command1 == null || Command2 == null) {
+                Console.WriteLine("     Неизвестный матч пропущен " +
+                    "- отсутствует команда(ы)");
+                return new Dictionary<string, string> { };
+            } else if (GameId == null) {
+                Console.WriteLine($"    Матч \"{Command1}-{Command2}\" пропущен " +
+                    $"- отсутствует игровой id");
+                return new Dictionary<string, string> { };
+            } else if (GameTime == null) {
+                Console.WriteLine($"    Матч \"{Command1}-{Command2}\" пропущен " +
+                    $"- отсутствует время игры");
+                return new Dictionary<string, string> { };
+            } else if (Score1 == null || Score2 == null) {
+                Console.WriteLine($"    Матч \"{Command1}-{Command2}\" пропущен " +
+                    $"- отсутствует счет игры");
+                return new Dictionary<string, string> { };
+            } else if (Coefficient == null || Parameter == null) {
+                Console.WriteLine($"    Матч \"{Command1}-{Command2}\" пропущен " +
+                    $"- отсутствует параметры ставки");
+                return new Dictionary<string, string> { };
+            } else {
+                //Console.WriteLine($"   Матч \"{Command1}-{Command2}\" добавлен");
+                return new Dictionary<string, string> {
+                {"Liga", Liga },
+                {"GameId", GameId },
+                {"Command1", Command1 },
+                {"Command2", Command2 },
+                {"GameTime", GameTime },
+                {"Score1", Score1 },
+                {"Score2", Score2 },
+                {"Parameter", Parameter },
+                {"Coefficient", Coefficient },
+            };
+            };
+        }
+
+        static private List<string> SearchParameters(JToken item) {
+
+            string Parameter = null;
+            string Coefficient = null;
+            float t, ce, g; // поля json
+
+            foreach (var inAE in item["AE"]) {
+                foreach (var inME in inAE["ME"]) {
+                    try {
+                        t = (float)inME["T"];
+                        ce = (float)inME["CE"];
+                        g = (float)inME["G"];
+                    }
+                    catch (Exception e) {
+                        t = 0f;
+                        ce = 0f;
+                        g = 0f;
+                    }
+                    if (t == 10 && ce == 1 && g == 17) {
+                        Parameter = (string)inME["P"];
+                        Coefficient = (string)inME["P"];
+
+                        return new List<string> {
+                        Parameter,
+                        Coefficient
+                    };
+                    }
+                }
+            }
+            return new List<string> { Parameter, Coefficient };
+        }
+
+
+        private void Stop() {
+
+            f = false;
+            Invoke((MethodInvoker)delegate { textBox3.Text = @"Остановлен."; });
+            File.WriteAllText(path, linksold);
+            button1.Enabled = true;
+        }
+        private void button2_Click(object sender, EventArgs e) {
+            Stop();
         }
     }
 }
