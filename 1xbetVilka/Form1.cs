@@ -81,7 +81,7 @@ namespace _1xbetVilka {
                     var domain = textBox5.Text;
                     string url = $"https://{domain}/service-api/LiveFeed/Get1x2_VZip?sports=3&count=50&mode=4&country=2";
 
-                    List<Dictionary<string, string>> matches = GetMatches(wc, url);
+                    List<Match> matches = GetMatches(wc, url);
 
                     foreach (var match in matches) {
 
@@ -91,7 +91,7 @@ namespace _1xbetVilka {
                         if (matchBool) {
                             string summ = numericUpDown2.Text;
                             string otchet_str = 
-                                $"ТМ {match["Parameter"]}, К: {match["Coefficient"]} " +
+                                $"ТМ {match.Parameter}, К: {match["Coefficient"]} " +
                                 $"{match["Command1"]} - {match["Command2"]} {summ}";
 
                             Console.WriteLine("Попытка сделать ставку");
@@ -292,7 +292,7 @@ namespace _1xbetVilka {
             }
         }
 
-        private bool CheckMatch(Dictionary<string, string> match) {
+        private bool CheckMatch(Match match) {
             var ligas_set_inc = textBox4.Text.Split(',');
             var ligas_set_ex = textBox2.Text.Split(',');
             int scoreDifference = Math.Abs(Int32.Parse(match["Score1"]) - Int32.Parse(match["Score2"]));
@@ -330,24 +330,24 @@ namespace _1xbetVilka {
         }
 
 
-        static List<Dictionary<string, string>> GetMatches(WebClient wc, string url) {
+        static List<Match> GetMatches(WebClient wc, string url) {
 
             Console.WriteLine("Идет получение матчей");
 
             JObject json = JObject.Parse(wc.DownloadString(url));
-            List<Dictionary<string, string>> allMatches = new List<Dictionary<string, string>> { };
+            List<Match> allMatches = new List<Match>();
 
             foreach (var item in json["Value"]) {
-                Dictionary<string, string> dict = TransformMatch(item);
-                if (dict.Count != 0) {
-                    allMatches.Add(dict);
+                Match match = TransformMatch(item);
+                if (match.Liga != null) {
+                    allMatches.Add(match);
                 }
             }
             Console.WriteLine("\n   Получение матчей завершено");
             return allMatches;
         }
 
-        static private Dictionary<string, string> TransformMatch(JToken item) {
+        static private Match TransformMatch(JToken item) {
 
             string Liga = (string)item["L"];
             string GameId = (string)item["I"];
@@ -364,40 +364,40 @@ namespace _1xbetVilka {
             if (Liga == null) {
                 Console.WriteLine("     Неизвестный матч пропущен " +
                     "- отсутствует лига");
-                return new Dictionary<string, string> { };
+                return new Match();
             } else if (Command1 == null || Command2 == null) {
                 Console.WriteLine("     Неизвестный матч пропущен " +
                     "- отсутствует команда(ы)");
-                return new Dictionary<string, string> { };
+                return new Match();
             } else if (GameId == null) {
                 Console.WriteLine($"    Матч \"{Command1}-{Command2}\" пропущен " +
                     $"- отсутствует игровой id");
-                return new Dictionary<string, string> { };
+                return new Match();
             } else if (GameTime == null) {
                 Console.WriteLine($"    Матч \"{Command1}-{Command2}\" пропущен " +
                     $"- отсутствует время игры");
-                return new Dictionary<string, string> { };
+                return new Match();
             } else if (Score1 == null || Score2 == null) {
                 Console.WriteLine($"    Матч \"{Command1}-{Command2}\" пропущен " +
                     $"- отсутствует счет игры");
-                return new Dictionary<string, string> { };
+                return new Match();
             } else if (Coefficient == null || Parameter == null) {
                 Console.WriteLine($"    Матч \"{Command1}-{Command2}\" пропущен " +
                     $"- отсутствует параметры ставки");
-                return new Dictionary<string, string> { };
+                return new Match();
             } else {
                 //Console.WriteLine($"   Матч \"{Command1}-{Command2}\" добавлен");
-                return new Dictionary<string, string> {
-                {"Liga", Liga },
-                {"GameId", GameId },
-                {"Command1", Command1 },
-                {"Command2", Command2 },
-                {"GameTime", GameTime },
-                {"Score1", Score1 },
-                {"Score2", Score2 },
-                {"Parameter", Parameter },
-                {"Coefficient", Coefficient },
-            };
+                return new Match {
+                    Liga = Liga,
+                    GameId = GameId,
+                    Command1 = Command1,
+                    Command2 = Command2,
+                    GameTime = Int32.Parse(GameTime),
+                    Score1 = Int32.Parse(Score1),
+                    Score2 = Int32.Parse(Score2),
+                    Parameter = Parameter,
+                    Coefficient = Coefficient
+                };
             };
         }
 
