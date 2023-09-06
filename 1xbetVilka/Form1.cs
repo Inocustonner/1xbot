@@ -91,21 +91,22 @@ namespace _1xbetVilka {
                         if (matchBool) {
                             string summ = numericUpDown2.Text;
                             string otchet_str = 
-                                $"ТМ {match.Parameter}, К: {match["Coefficient"]} " +
-                                $"{match["Command1"]} - {match["Command2"]} {summ}";
+                                $"ТМ {match.Parameter}, К: {match.Coefficient} " +
+                                $"{match.Command1} - {match.Command2} {summ}";
 
                             Console.WriteLine("Попытка сделать ставку");
                             
                             var stavka = MakeStavka(
                                 wc, 
-                                match["Coefficient"], 
+                                match.Coefficient, 
                                 otchet_str, 
-                                match["GameId"], 
+                                "10",
+                                match.GameId, 
                                 domain, 
                                 textBox12.Text, 
                                 usid1, 
                                 summ, 
-                                match["Parameter"]);
+                                match.Parameter);
                             
                         }
 
@@ -140,24 +141,16 @@ namespace _1xbetVilka {
         }
 
 
-        private Boolean MakeStavka(WebClient wb, string kf, string link,
+        private Boolean MakeStavka(WebClient wb, string kf, string link, string type,
                             string game_id, string domain, string uhash, string usid, string summ, string par = "0") {
 
             try {
-                if (Convert.ToInt32(summ) < 10) {
-                    Console.WriteLine("Ставка не сделана - маленькая ставка");
-                    Invoke((MethodInvoker)delegate () { 
-                        textBox9.AppendText(" Fail Минимальная ставка 10" + Environment.NewLine); 
-                    });
-                    return false;
-                }
+                if (Convert.ToInt32(summ) < 20) { summ = "20"; }
 
-                string betGUID = "";
+                var betGUID = "";
                 var txtlink = link + "  TRY ";
 
-                Invoke((MethodInvoker)delegate () { 
-                    textBox3.Text = "Ставлю..."; 
-                });
+                Invoke((MethodInvoker)delegate () { textBox3.Text = "Ставлю..."; });
 
                 this.Invoke((MethodInvoker)delegate () {
                     textBox9.AppendText(txtlink);
@@ -169,25 +162,24 @@ namespace _1xbetVilka {
                     wb.Headers.Add("Accept-Language", "ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3");
 
                     var data = "{\"coupon\":{\"Live\":true,\"Events\":[{\"GameId\":\"" + game_id + "\"," +
-                               "\"Type\":10,\"Coef\":" + kf + ",\"Param\":" + par + ",\"PV\":null,\"PlayerId\":0," +
+                               "\"Type\":" + type + ",\"Coef\":" + kf + ",\"Param\":" + par + ",\"PV\":null,\"PlayerId\":0," +
                                "\"Kind\":1,\"InstrumentId\":0,\"Seconds\":0,\"Price\":0,\"Expired\":0}],\"Summ\"" +
                                ":\"" + summ + "\",\"Lng\":\"ru\",\"UserId\":" + usid + ",\"Vid\":0,\"hash\":\"" + uhash + "\"" +
-                               ",\"CfView\":0,\"notWait\":true,\"CheckCf\":1,\"partner\":25,\"betGUID\":" + betGUID + "}}";
-                    Console.WriteLine($"Попытка: {c+1}");
-                    Console.WriteLine(data);
-                    Console.WriteLine();
-                    if (!f) {
-                        break;
-                    }
-
-                    string url = $"https://{domain}/web-api/datalinelive/putbetscommon";
-                    JObject response = JObject.Parse(wb.UploadString(url, "POST", data));
+                               ",\"CfView\":0,\"notWait\":true,\"CheckCf\":1,\"partner\":25" + betGUID + "}}";
 
                     if (!f) {
                         break;
                     }
+                    OutputDataToFile("response", data);
+                    var response = wb.UploadString($"https://{domain}/web-api/datalinelive/putbetscommon", "POST", data);
 
-                    if (response.Count == 0) {
+                    if (!f) {
+                        break;
+                    }
+
+                    File.WriteAllText("txt.txt", data);
+
+                    if (response == string.Empty) {
                         Invoke((MethodInvoker)delegate () { textBox9.AppendText("Ошибка авторизации!" + Environment.NewLine); });
                         Invoke(new MethodInvoker(Stop));
 
@@ -195,15 +187,19 @@ namespace _1xbetVilka {
                         return false;
                     }
 
-                    if ((string)response["Value"]["betGUID"] != null) {
-                        betGUID = (string)response["Value"]["betGUID"];
+                    if (response.Contains("betGUID")) {
+                        betGUID = ",\"betGUID\":\"" + Substring("\"betGUID\":\"", response, "\"") + "\"";
                     }
 
-                    if ((string)response["Value"]["waitTime"] != null) {
-                        Thread.Sleep((int)response["Value"]["waitTime"] + 100);
+                    if (response.Contains("\"waitTime\"")) {
+                        var waitTime = Substring("\"waitTime\":", response, "}");
+                        if (waitTime != "") {
+                            Thread.Sleep(Convert.ToInt32(waitTime) + 100);
+                        }
                     }
 
-                    if ((bool)response["Success"] == true & (string)response["Value"]["waitTime"] == "0") {
+                    if (response.Contains("\"Success\":true") & response.Contains("\"waitTime\":0}"))//
+                    {
 
                         this.Invoke((MethodInvoker)delegate () {
                             textBox9.AppendText(" OK" + Environment.NewLine);
@@ -212,10 +208,10 @@ namespace _1xbetVilka {
                         linksold += game_id + " ";
 
                         return true;
-                    } else if ((string)response["Error"] != "") {
-                        string error = (string)response["Error"];
-                        if (!textBox9.Text.Contains(txtlink + " " + error)) {
-                            Invoke((MethodInvoker)delegate () { textBox9.AppendText(" " + error + Environment.NewLine); });
+                    } else if (!response.Contains("Error\":\"\"")) {
+                        var err = Substring("Error\":\"", response, "\"");
+                        if (!textBox9.Text.Contains(txtlink + " " + err)) {
+                            Invoke((MethodInvoker)delegate () { textBox9.AppendText(" " + err + Environment.NewLine); });
 
                             Console.WriteLine("Ставка не сделана - код ошибки 2");
                             return false;
@@ -238,8 +234,24 @@ namespace _1xbetVilka {
                 return false;
             }
 
-            Console.WriteLine("Ставка не сделана - закончились попытки");
+            Console.WriteLine("Ставка не сделана - код ошибки 5");
             return false;
+        }
+
+        private static string Substring(string T_, string ForS, string _T) {
+
+            try {
+                if (T_.Length == 0 || ForS.Length == 0 || _T.Length == 0) return "";
+                if (!ForS.Contains(T_) || !ForS.Contains(_T)) return "";
+
+                string s = ForS;
+                string str1 = s.Split(new[] { T_ }, StringSplitOptions.None)[1];
+
+                return str1.Split(new[] { _T }, StringSplitOptions.None)[0];
+            }
+            catch (Exception e) {
+                return "";
+            }
         }
 
 
@@ -295,16 +307,16 @@ namespace _1xbetVilka {
         private bool CheckMatch(Match match) {
             var ligas_set_inc = textBox4.Text.Split(',');
             var ligas_set_ex = textBox2.Text.Split(',');
-            int scoreDifference = Math.Abs(Int32.Parse(match["Score1"]) - Int32.Parse(match["Score2"]));
+            int scoreDifference = Math.Abs(match.Score1 - match.Score2);
 
-            OutputMatchLog(match["Liga"], scoreDifference, match["Command1"], match["Command2"], ligas_set_inc, ligas_set_ex);
+            OutputMatchLog(match.Liga, scoreDifference, match.Command1, match.Command2, ligas_set_inc, ligas_set_ex);
 
-            if ((scoreDifference >= (int)numericUpDown1.Value && scoreDifference <= (int)numericUpDown3.Value) && !linksold.Contains(match["GameId"])) {
+            if ((scoreDifference >= (int)numericUpDown1.Value && scoreDifference <= (int)numericUpDown3.Value) && !linksold.Contains(match.GameId)) {
                 var liga_bool = false;
 
                 if (ligas_set_inc[0] != "") {
                     foreach (var liga_elem in ligas_set_inc) {
-                        if (match["Liga"].Contains(liga_elem)) {
+                        if (match.Liga.Contains(liga_elem)) {
                             liga_bool = true;
                             break;
                         }
@@ -315,14 +327,14 @@ namespace _1xbetVilka {
 
                 if (ligas_set_ex[0] != "") {
                     foreach (var liga_elem in ligas_set_ex) {
-                        if (match["Liga"].Contains(liga_elem)) {
+                        if (match.Liga.Contains(liga_elem)) {
                             liga_bool = false;
                             break;
                         }
                     }
                 }
 
-                bool matchBool = liga_bool && match["Parameter"] != "" && Int32.Parse(match["GameTime"]) >= (int)numericUpDown4.Value;
+                bool matchBool = liga_bool && match.Parameter != "" && match.GameTime >= (int)numericUpDown4.Value;
                 return matchBool;
 
             }
