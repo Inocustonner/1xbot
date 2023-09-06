@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace _1xbetVilka {
-    
+
     public struct Match {
         public string GameId;
         public string Liga;
@@ -90,24 +90,25 @@ namespace _1xbetVilka {
 
                         if (matchBool) {
                             string summ = numericUpDown2.Text;
-                            string otchet_str = 
+                            // перенести в make stavka
+                            string otchet_str =
                                 $"ТМ {match.Parameter}, К: {match.Coefficient} " +
                                 $"{match.Command1} - {match.Command2} {summ}";
 
                             Console.WriteLine("Попытка сделать ставку");
-                            
+
                             var stavka = MakeStavka(
-                                wc, 
-                                match.Coefficient, 
-                                otchet_str, 
+                                wc,
+                                match.Coefficient,
+                                otchet_str,
                                 "10",
-                                match.GameId, 
-                                domain, 
-                                textBox12.Text, 
-                                usid1, 
-                                summ, 
+                                match.GameId,
+                                domain,
+                                textBox12.Text,
+                                usid1,
+                                summ,
                                 match.Parameter);
-                            
+
                         }
 
                         Console.WriteLine(""); // Отделяет разные матчи
@@ -145,7 +146,7 @@ namespace _1xbetVilka {
                             string game_id, string domain, string uhash, string usid, string summ, string par = "0") {
 
             try {
-                if (Convert.ToInt32(summ) < 20) { summ = "20"; }
+                if (Convert.ToInt32(summ) < 10) { summ = "10"; }
 
                 var betGUID = "";
                 var txtlink = link + "  TRY ";
@@ -161,26 +162,59 @@ namespace _1xbetVilka {
                     wb.Headers.Add("Content-Type", "application/json; charset=UTF-8");
                     wb.Headers.Add("Accept-Language", "ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3");
 
-                    var data = "{\"coupon\":{\"Live\":true,\"Events\":[{\"GameId\":\"" + game_id + "\"," +
-                               "\"Type\":" + type + ",\"Coef\":" + kf + ",\"Param\":" + par + ",\"PV\":null,\"PlayerId\":0," +
-                               "\"Kind\":1,\"InstrumentId\":0,\"Seconds\":0,\"Price\":0,\"Expired\":0}],\"Summ\"" +
-                               ":\"" + summ + "\",\"Lng\":\"ru\",\"UserId\":" + usid + ",\"Vid\":0,\"hash\":\"" + uhash + "\"" +
-                               ",\"CfView\":0,\"notWait\":true,\"CheckCf\":1,\"partner\":25" + betGUID + "}}";
+                    JObject jData = new JObject
+                    {
+                        { "coupon", new JObject
+                            {
+                                { "Live", true },
+                                {"Summ" , summ },
+                                {"Lng" , "ru" },
+                                {"UserId" , usid },
+                                {"Vid" , 0 },
+                                {"hash" , uhash },
+                                {"CfView" , 0 },
+                                {"notWait" , true },
+                                {"CheckCf" , 1 },
+                                {"partner" , 25 },
+                                {"betGUID" , betGUID },
+                                { "Events", new JArray
+                                    { new JObject
+                                        {
+                                            {"GameId" , game_id},
+                                            {"Type" , type},
+                                            {"Coef" , kf},
+                                            {"Param" , par},
+                                            {"PV" , (string)null},
+                                            {"PlayerId" , 0},
+                                            {"Kind" , 1},
+                                            {"InstrumentId" , 0},
+                                            {"Seconds" , 0},
+                                            {"Price" , 0},
+                                            {"Expired" , 0}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    };
 
                     if (!f) {
                         break;
                     }
-                    OutputDataToFile("response", data);
-                    var response = wb.UploadString($"https://{domain}/web-api/datalinelive/putbetscommon", "POST", data);
+
+                    Console.WriteLine(jData.ToString());
+
+                    var response = wb.UploadString($"https://{domain}/web-api/datalinelive/putbetscommon",
+                        "POST", jData.ToString());
 
                     if (!f) {
                         break;
                     }
-
-                    File.WriteAllText("txt.txt", data);
 
                     if (response == string.Empty) {
-                        Invoke((MethodInvoker)delegate () { textBox9.AppendText("Ошибка авторизации!" + Environment.NewLine); });
+                        Invoke((MethodInvoker)delegate () {
+                            textBox9.AppendText("Ошибка авторизации!" + Environment.NewLine);
+                        });
                         Invoke(new MethodInvoker(Stop));
 
                         Console.WriteLine("Ставка не сделана - код ошибки 1");
@@ -188,7 +222,7 @@ namespace _1xbetVilka {
                     }
 
                     if (response.Contains("betGUID")) {
-                        betGUID = ",\"betGUID\":\"" + Substring("\"betGUID\":\"", response, "\"") + "\"";
+                        betGUID = Substring("\"betGUID\":\"", response, "\"");
                     }
 
                     if (response.Contains("\"waitTime\"")) {
@@ -208,17 +242,22 @@ namespace _1xbetVilka {
                         linksold += game_id + " ";
 
                         return true;
+
                     } else if (!response.Contains("Error\":\"\"")) {
                         var err = Substring("Error\":\"", response, "\"");
                         if (!textBox9.Text.Contains(txtlink + " " + err)) {
-                            Invoke((MethodInvoker)delegate () { textBox9.AppendText(" " + err + Environment.NewLine); });
+                            Invoke((MethodInvoker)delegate () {
+                                textBox9.AppendText(" " + err + Environment.NewLine);
+                            });
 
                             Console.WriteLine("Ставка не сделана - код ошибки 2");
                             return false;
 
                         } else {
                             string[] result = textBox9.Lines.Where((x, y) => y != textBox9.Lines.Length - 1).ToArray();
-                            Invoke((MethodInvoker)delegate () { textBox9.Text = string.Join(Environment.NewLine, result) + Environment.NewLine; });
+                            Invoke((MethodInvoker)delegate () {
+                                textBox9.Text = string.Join(Environment.NewLine, result) + Environment.NewLine;
+                            });
                         }
 
                         Console.WriteLine("Ставка не сделана - код ошибки 3");
