@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace _1xbetVilka {
-
+    
     public struct Match {
         public string GameId;
         public string Liga;
@@ -91,24 +91,24 @@ namespace _1xbetVilka {
                         if (matchBool) {
                             string summ = numericUpDown2.Text;
                             // перенести в make stavka
-                            string otchet_str =
+                            string otchet_str = 
                                 $"ТМ {match.Parameter}, К: {match.Coefficient} " +
                                 $"{match.Command1} - {match.Command2} {summ}";
 
                             Console.WriteLine("Попытка сделать ставку");
-
+                            
                             var stavka = MakeStavka(
-                                wc,
-                                match.Coefficient,
-                                otchet_str,
+                                wc, 
+                                match.Coefficient, 
+                                otchet_str, 
                                 "10",
-                                match.GameId,
-                                domain,
-                                textBox12.Text,
-                                usid1,
-                                summ,
+                                match.GameId, 
+                                domain, 
+                                textBox12.Text, 
+                                usid1, 
+                                summ, 
                                 match.Parameter);
-
+                            
                         }
 
                         Console.WriteLine(""); // Отделяет разные матчи
@@ -162,9 +162,9 @@ namespace _1xbetVilka {
                     wb.Headers.Add("Content-Type", "application/json; charset=UTF-8");
                     wb.Headers.Add("Accept-Language", "ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3");
 
-                    JObject jData = new JObject
+                    JObject jData = new JObject 
                     {
-                        { "coupon", new JObject
+                        { "coupon", new JObject 
                             {
                                 { "Live", true },
                                 {"Summ" , summ },
@@ -202,15 +202,15 @@ namespace _1xbetVilka {
                         break;
                     }
 
-                    Console.WriteLine(jData.ToString());
-
-                    var response = wb.UploadString($"https://{domain}/web-api/datalinelive/putbetscommon",
+                    string response = wb.UploadString($"https://{domain}/web-api/datalinelive/putbetscommon",
                         "POST", jData.ToString());
+                    JObject jResponse;
 
                     if (!f) {
                         break;
                     }
 
+                    // вроде как такого исхода не может быть, но на свякий случай оставил
                     if (response == string.Empty) {
                         Invoke((MethodInvoker)delegate () {
                             textBox9.AppendText("Ошибка авторизации!" + Environment.NewLine);
@@ -219,35 +219,26 @@ namespace _1xbetVilka {
 
                         Console.WriteLine("Ставка не сделана - код ошибки 1");
                         return false;
+
+                    } else {
+                        jResponse = JObject.Parse(response);
                     }
 
-                    if (response.Contains("betGUID")) {
-                        betGUID = Substring("\"betGUID\":\"", response, "\"");
-                    }
+                    // я понимаю насколько это выглядит кривым. Но здесь проблема в том, что "Value" может быть как
+                    // JObject так и JToken, а JToken не имеет метода ContainsKey для проверки наличия полей
+                    // так что считаю, что это проблема сервера и тут иначе не получиться
+                    if (jResponse["Value"].GetType().ToString() == "Newtonsoft.Json.Linq.JObject") {
+                        betGUID = (string)jResponse["Value"]["betGUID"];
+                        // переместил ожидание сюда, так как не вижу смысла для отдельной проверки
+                        Thread.Sleep((int)jResponse["Value"]["waitTime"] + 100);
 
-                    if (response.Contains("\"waitTime\"")) {
-                        var waitTime = Substring("\"waitTime\":", response, "}");
-                        if (waitTime != "") {
-                            Thread.Sleep(Convert.ToInt32(waitTime) + 100);
-                        }
-                    }
-
-                    if (response.Contains("\"Success\":true") & response.Contains("\"waitTime\":0}"))//
-                    {
-
-                        this.Invoke((MethodInvoker)delegate () {
-                            textBox9.AppendText(" OK" + Environment.NewLine);
-                        });
-
-                        linksold += game_id + " ";
-
-                        return true;
-
-                    } else if (!response.Contains("Error\":\"\"")) {
-                        var err = Substring("Error\":\"", response, "\"");
-                        if (!textBox9.Text.Contains(txtlink + " " + err)) {
+                    // здесь идет проверка на наличие ошибки. Так как она здесь, лишь когда "Value" - это JToken 
+                    // вообще безпонятие, что снизу происходит, но работает и ладно
+                    } else if ((string)jResponse["Error"] != null) {
+                        string error = (string)jResponse["Error"];
+                        if (!textBox9.Text.Contains(txtlink + " " + error)) {
                             Invoke((MethodInvoker)delegate () {
-                                textBox9.AppendText(" " + err + Environment.NewLine);
+                                textBox9.AppendText(" " + error + Environment.NewLine);
                             });
 
                             Console.WriteLine("Ставка не сделана - код ошибки 2");
@@ -263,6 +254,18 @@ namespace _1xbetVilka {
                         Console.WriteLine("Ставка не сделана - код ошибки 3");
                         return false;
                     }
+
+                    if ((bool)jResponse["Success"] == true & (string)jResponse["Value"]["waitTime"] == "0")
+                    {
+                        this.Invoke((MethodInvoker)delegate () {
+                            textBox9.AppendText(" OK" + Environment.NewLine);
+                        });
+
+                        linksold += game_id + " ";
+
+                        return true;
+
+                    }
                 }
             }
             catch (Exception er) {
@@ -273,6 +276,9 @@ namespace _1xbetVilka {
                 return false;
             }
 
+            Invoke((MethodInvoker)delegate () {
+                textBox9.AppendText("Fail" + Environment.NewLine);
+            });
             Console.WriteLine("Ставка не сделана - код ошибки 5");
             return false;
         }
