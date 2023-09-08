@@ -56,26 +56,27 @@ namespace _1xbetVilka {
 
 
         private void StartStavka() {
-            Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
-            WebClient wc = new WebClient();
-            wc.Encoding = Encoding.UTF8;
-            Console.OutputEncoding = Encoding.UTF8;
+            try {
+                Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
+                WebClient wc = new WebClient();
+                wc.Encoding = Encoding.UTF8;
+                Console.OutputEncoding = Encoding.UTF8;
 
-            wc.Headers.Add("Cookie", "lng=ru; SESSION=" + textBox8.Text);
-            wc.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                wc.Headers.Add("Cookie", "lng=ru; SESSION=" + textBox8.Text);
+                wc.Headers.Add("X-Requested-With", "XMLHttpRequest");
 
-            var usid1 = textBox1.Text.Split(':')[0];
+                var usid1 = textBox1.Text.Split(':')[0];
 
-            if (!File.Exists(path)) {
-                File.Create(path).Close();
-            }
+                if (!File.Exists(path)) {
+                    File.Create(path).Close();
+                }
 
-            linksold = File.ReadAllText(path);
+                linksold = File.ReadAllText(path);
 
-            File.WriteAllText(usersets, usid1 + ";" + textBox12.Text + ";" + textBox5.Text);
+                File.WriteAllText(usersets, usid1 + ";" + textBox12.Text + ";" + textBox5.Text);
 
-            while (f) {
-                try {
+                while (f) {
+
                     Invoke((MethodInvoker)delegate () { textBox3.Text = "Работаю..."; });
 
                     var domain = textBox5.Text;
@@ -91,24 +92,24 @@ namespace _1xbetVilka {
                         if (matchBool) {
                             string summ = numericUpDown2.Text;
                             // перенести в make stavka
-                            string otchet_str = 
+                            string otchet_str =
                                 $"ТМ {match.Parameter}, К: {match.Coefficient} " +
                                 $"{match.Command1} - {match.Command2} {summ}";
 
                             Console.WriteLine("Попытка сделать ставку");
-                            
+
                             var stavka = MakeStavka(
-                                wc, 
-                                match.Coefficient, 
-                                otchet_str, 
+                                wc,
+                                match.Coefficient,
+                                otchet_str,
                                 "10",
-                                match.GameId, 
-                                domain, 
-                                textBox12.Text, 
-                                usid1, 
-                                summ, 
+                                match.GameId,
+                                domain,
+                                textBox12.Text,
+                                usid1,
+                                summ,
                                 match.Parameter);
-                            
+
                         }
 
                         Console.WriteLine(""); // Отделяет разные матчи
@@ -116,28 +117,21 @@ namespace _1xbetVilka {
 
                     Console.WriteLine("-----"); // Отделяет разные выводы логов
 
-                    if (!f) {
-                        break;
-                    }
-
                     for (int j = 5; j >= 1; j--) {
                         this.Invoke((MethodInvoker)delegate () { textBox3.Text = "Пауза " + j + " сек"; });
-                        if (!f) {
-                            break;
-                        }
 
                         Thread.Sleep(1000);
-
-                        if (!f) {
-                            break;
-                        }
                     }
 
                     Thread.Sleep(500);
+
                 }
-                catch (Exception e) {
-                    Console.WriteLine(e);
-                }
+            }
+            catch (ThreadAbortException e) {
+                Console.WriteLine("Поток завершился");
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
             }
         }
 
@@ -146,7 +140,9 @@ namespace _1xbetVilka {
                             string game_id, string domain, string uhash, string usid, string summ, string par = "0") {
 
             try {
-                if (Convert.ToInt32(summ) < 10) { summ = "10"; }
+                if (Convert.ToInt32(summ) < 10) { 
+                    summ = "10"; 
+                }
 
                 var betGUID = "";
                 var txtlink = link + "  TRY ";
@@ -167,30 +163,30 @@ namespace _1xbetVilka {
                         { "coupon", new JObject 
                             {
                                 { "Live", true },
-                                {"Summ" , summ },
-                                {"Lng" , "ru" },
-                                {"UserId" , usid },
-                                {"Vid" , 0 },
-                                {"hash" , uhash },
-                                {"CfView" , 0 },
-                                {"notWait" , true },
-                                {"CheckCf" , 1 },
-                                {"partner" , 25 },
-                                {"betGUID" , betGUID },
+                                { "Summ" , summ },
+                                { "Lng" , "ru" },
+                                { "UserId" , usid },
+                                { "Vid" , 0 },
+                                { "hash" , uhash },
+                                { "CfView" , 0 },
+                                { "notWait" , true },
+                                { "CheckCf" , 1 },
+                                { "partner" , 25 },
+                                { "betGUID" , betGUID },
                                 { "Events", new JArray
                                     { new JObject
                                         {
-                                            {"GameId" , game_id},
-                                            {"Type" , type},
-                                            {"Coef" , kf},
-                                            {"Param" , par},
-                                            {"PV" , (string)null},
-                                            {"PlayerId" , 0},
-                                            {"Kind" , 1},
-                                            {"InstrumentId" , 0},
-                                            {"Seconds" , 0},
-                                            {"Price" , 0},
-                                            {"Expired" , 0}
+                                            { "GameId" , game_id },
+                                            { "Type" , type },
+                                            { "Coef" , kf },
+                                            { "Param" , par },
+                                            { "PV" , null },
+                                            { "PlayerId" , 0 },
+                                            { "Kind" , 1 },
+                                            { "InstrumentId" , 0 },
+                                            { "Seconds" , 0 },
+                                            { "Price" , 0 },
+                                            { "Expired" , 0 }
                                         }
                                     }
                                 }
@@ -198,17 +194,9 @@ namespace _1xbetVilka {
                         }
                     };
 
-                    if (!f) {
-                        break;
-                    }
-
                     string response = wb.UploadString($"https://{domain}/web-api/datalinelive/putbetscommon",
                         "POST", jData.ToString());
                     JObject jResponse;
-
-                    if (!f) {
-                        break;
-                    }
 
                     // вроде как такого исхода не может быть, но на свякий случай оставил
                     if (response == string.Empty) {
@@ -220,22 +208,24 @@ namespace _1xbetVilka {
                         Console.WriteLine("Ставка не сделана - код ошибки 1");
                         return false;
 
-                    } else {
-                        jResponse = JObject.Parse(response);
                     }
+                        
+                    jResponse = JObject.Parse(response);
+
+                    string error = (string)jResponse["Error"];
 
                     // я понимаю насколько это выглядит кривым. Но здесь проблема в том, что "Value" может быть как
                     // JObject так и JToken, а JToken не имеет метода ContainsKey для проверки наличия полей
                     // так что считаю, что это проблема сервера и тут иначе не получиться
                     if (jResponse["Value"].GetType().ToString() == "Newtonsoft.Json.Linq.JObject") {
-                        betGUID = (string)jResponse["Value"]["betGUID"];
-                        // переместил ожидание сюда, так как не вижу смысла для отдельной проверки
-                        Thread.Sleep((int)jResponse["Value"]["waitTime"] + 100);
+                    betGUID = (string)jResponse["Value"]["betGUID"];
+                    // переместил ожидание сюда, так как не вижу смысла для отдельной проверки
+                    Thread.Sleep((int)jResponse["Value"]["waitTime"] + 100);
 
                     // здесь идет проверка на наличие ошибки. Так как она здесь, лишь когда "Value" - это JToken 
                     // вообще безпонятие, что снизу происходит, но работает и ладно
-                    } else if ((string)jResponse["Error"] != null) {
-                        string error = (string)jResponse["Error"];
+                    } else if (error != null) {
+                        error = (string)jResponse["Error"];
                         if (!textBox9.Text.Contains(txtlink + " " + error)) {
                             Invoke((MethodInvoker)delegate () {
                                 textBox9.AppendText(" " + error + Environment.NewLine);
@@ -244,6 +234,7 @@ namespace _1xbetVilka {
                             Console.WriteLine("Ставка не сделана - код ошибки 2");
                             return false;
 
+                        // можно ли это убрать?
                         } else {
                             string[] result = textBox9.Lines.Where((x, y) => y != textBox9.Lines.Length - 1).ToArray();
                             Invoke((MethodInvoker)delegate () {
@@ -267,35 +258,26 @@ namespace _1xbetVilka {
 
                     }
                 }
+
+                Invoke((MethodInvoker)delegate () {
+                    textBox9.AppendText("Fail" + Environment.NewLine);
+                });
+                Console.WriteLine("Ставка не сделана - код ошибки 5");
+                return false;
+            }
+            catch (ThreadAbortException e) {
+                Console.WriteLine("Поток завершился");
+
+                return false;
             }
             catch (Exception er) {
-                Invoke((MethodInvoker)delegate () { textBox9.AppendText(" Fail" + Environment.NewLine); });
+                Invoke((MethodInvoker)delegate () {
+                    textBox9.AppendText(" Fail" + Environment.NewLine); 
+                });
 
                 Console.WriteLine("Ставка не сделана - исключение\n");
                 Console.WriteLine(er);
                 return false;
-            }
-
-            Invoke((MethodInvoker)delegate () {
-                textBox9.AppendText("Fail" + Environment.NewLine);
-            });
-            Console.WriteLine("Ставка не сделана - код ошибки 5");
-            return false;
-        }
-
-        private static string Substring(string T_, string ForS, string _T) {
-
-            try {
-                if (T_.Length == 0 || ForS.Length == 0 || _T.Length == 0) return "";
-                if (!ForS.Contains(T_) || !ForS.Contains(_T)) return "";
-
-                string s = ForS;
-                string str1 = s.Split(new[] { T_ }, StringSplitOptions.None)[1];
-
-                return str1.Split(new[] { _T }, StringSplitOptions.None)[0];
-            }
-            catch (Exception e) {
-                return "";
             }
         }
 
@@ -493,8 +475,11 @@ namespace _1xbetVilka {
 
         private void Stop() {
 
+            thr.Abort();
             f = false;
-            Invoke((MethodInvoker)delegate { textBox3.Text = @"Остановлен."; });
+            Invoke((MethodInvoker)delegate { 
+                textBox3.Text = @"Остановлен."; 
+            });
             File.WriteAllText(path, linksold);
             button1.Enabled = true;
         }
