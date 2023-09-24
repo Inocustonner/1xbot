@@ -208,19 +208,18 @@ namespace _1xbetVilka {
                         break;
                     }
 
-                    OutputDataToFile("bet", jData.ToString());
+                    // OutputDataToFile("bet", jData.ToString());
 
                     string response = wb.UploadString($"https://{domain}/web-api/datalinelive/putbetscommon",
                         "POST", jData.ToString());
 
-                    OutputDataToFile("response", response);
+                    // OutputDataToFile("response", response);
                     JObject jResponse;
 
                     if (!f) {
                         break;
                     }
 
-                    // вроде как такого исхода не может быть, но на свякий случай оставил
                     if (response == string.Empty) {
                         Invoke((MethodInvoker)delegate () {
                             textBox9.AppendText("Ошибка авторизации!" + Environment.NewLine);
@@ -234,16 +233,10 @@ namespace _1xbetVilka {
                         jResponse = JObject.Parse(response);
                     }
 
-                    // я понимаю насколько это выглядит кривым. Но здесь проблема в том, что "Value" может быть как
-                    // JObject так и JToken, а JToken не имеет метода ContainsKey для проверки наличия полей
-                    // так что считаю, что это проблема сервера и тут иначе не получиться
                     if (jResponse["Value"].GetType().ToString() == "Newtonsoft.Json.Linq.JObject") {
                         betGUID = (string)jResponse["Value"]["betGUID"];
-                        // переместил ожидание сюда, так как не вижу смысла для отдельной проверки
                         Thread.Sleep((int)jResponse["Value"]["waitTime"] + 100);
 
-                    // здесь идет проверка на наличие ошибки. Так как она здесь, лишь когда "Value" - это JToken 
-                    // вообще безпонятие, что снизу происходит, но работает и ладно
                     } else if ((string)jResponse["Error"] != null) {
                         string error = (string)jResponse["Error"];
 
