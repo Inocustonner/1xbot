@@ -162,29 +162,29 @@ namespace _1xbetVilka {
                     wb.Headers.Add("Content-Type", "application/json; charset=UTF-8");
                     wb.Headers.Add("Accept-Language", "ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3");
 
-                    JObject jData = new JObject 
+                    JObject jData = new JObject
                     {
-                        { "coupon", new JObject 
+                        { "coupon", new JObject
                             {
-                                { "Live", true },
-                                {"Summ" , summ },
+                                {"Live", true },
+                                {"Summ" , Int64.Parse(summ) },
                                 {"Lng" , "ru" },
-                                {"UserId" , usid },
+                                {"UserId" , Int64.Parse(usid) },
                                 {"Vid" , 0 },
                                 {"hash" , uhash },
                                 {"CfView" , 0 },
                                 {"notWait" , true },
                                 {"CheckCf" , 1 },
-                                {"partner" , 25 },
+                                {"partner" , 1 },
                                 {"betGUID" , betGUID },
                                 { "Events", new JArray
                                     { new JObject
                                         {
-                                            {"GameId" , game_id},
-                                            {"Type" , type},
-                                            {"Coef" , kf},
-                                            {"Param" , par},
-                                            {"PV" , (string)null},
+                                            {"GameId" , Int64.Parse(game_id)},
+                                            {"Type" , Int64.Parse(type)},
+                                            {"Coef" , Double.Parse(kf)},
+                                            {"Param" , Double.Parse(par)},
+                                            {"PV" , null},
                                             {"PlayerId" , 0},
                                             {"Kind" , 1},
                                             {"InstrumentId" , 0},
@@ -193,7 +193,13 @@ namespace _1xbetVilka {
                                             {"Expired" , 0}
                                         }
                                     }
-                                }
+                                },
+                                {"IsPowerBet", false},
+                                {"isAutoBet" , true},
+                                {"autoBetCf" , 0},
+                                {"DropOnScoreChange" , false},
+                                {"TransformEventKind" , true},
+                                {"autoBetCfView" , 0}
                             }
                         }
                     };
@@ -202,8 +208,12 @@ namespace _1xbetVilka {
                         break;
                     }
 
+                    OutputDataToFile("bet", jData.ToString());
+
                     string response = wb.UploadString($"https://{domain}/web-api/datalinelive/putbetscommon",
                         "POST", jData.ToString());
+
+                    OutputDataToFile("response", response);
                     JObject jResponse;
 
                     if (!f) {
@@ -236,6 +246,7 @@ namespace _1xbetVilka {
                     // вообще безпонятие, что снизу происходит, но работает и ладно
                     } else if ((string)jResponse["Error"] != null) {
                         string error = (string)jResponse["Error"];
+
                         if (!textBox9.Text.Contains(txtlink + " " + error)) {
                             Invoke((MethodInvoker)delegate () {
                                 textBox9.AppendText(" " + error + Environment.NewLine);
@@ -283,22 +294,6 @@ namespace _1xbetVilka {
             return false;
         }
 
-        private static string Substring(string T_, string ForS, string _T) {
-
-            try {
-                if (T_.Length == 0 || ForS.Length == 0 || _T.Length == 0) return "";
-                if (!ForS.Contains(T_) || !ForS.Contains(_T)) return "";
-
-                string s = ForS;
-                string str1 = s.Split(new[] { T_ }, StringSplitOptions.None)[1];
-
-                return str1.Split(new[] { _T }, StringSplitOptions.None)[0];
-            }
-            catch (Exception e) {
-                return "";
-            }
-        }
-
 
         private void OutputMatchLog(string liga, int score_difference, string command1, string command2, string[] ligas_set_inc, string[] ligas_set_ex) {
 
@@ -337,8 +332,8 @@ namespace _1xbetVilka {
 
         private void OutputDataToFile(string nameFile, string data) {
             try {
-                StreamWriter sw = new StreamWriter($"{nameFile}.txt");
-                sw.WriteLine(data);
+                StreamWriter sw = new StreamWriter($"{nameFile}.txt", true);
+                sw.WriteLine(data + "\n");
                 sw.Close();
             }
             catch (Exception e) {
@@ -434,7 +429,7 @@ namespace _1xbetVilka {
                 Console.WriteLine($"    Матч \"{Command1}-{Command2}\" пропущен " +
                     $"- отсутствует время игры");
                 return new Match();
-            } else if (Score1 == null || Score2 == null) {
+            } else if (Score1 == null && Score2 == null) {
                 Console.WriteLine($"    Матч \"{Command1}-{Command2}\" пропущен " +
                     $"- отсутствует счет игры");
                 return new Match();
