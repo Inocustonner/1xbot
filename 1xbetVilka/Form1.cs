@@ -408,7 +408,7 @@ namespace _1xbetVilka {
             string GameTime = (string)item["SC"]["TS"];
             string Score2 = (string)item["SC"]["FS"]["S2"];
             string Score1 = (string)item["SC"]["FS"]["S1"];
-
+            
             List<string> list = SearchParameters(item);
             string Parameter = list[0];
             string Coefficient = list[1];
@@ -445,8 +445,8 @@ namespace _1xbetVilka {
                     Command1 = Command1,
                     Command2 = Command2,
                     GameTime = Int32.Parse(GameTime),
-                    Score1 = Int32.Parse(Score1),
-                    Score2 = Int32.Parse(Score2),
+                    Score1 = (Score1 == null ? 0 : Int32.Parse(Score1)),
+                    Score2 = (Score2 == null ? 0 : Int32.Parse(Score2)),
                     Parameter = Parameter,
                     Coefficient = Coefficient
                 };
@@ -473,7 +473,7 @@ namespace _1xbetVilka {
                     }
                     if (t == 10 && ce == 1 && g == 17) {
                         Parameter = (string)inME["P"];
-                        Coefficient = (string)inME["P"];
+                        Coefficient = (string)inME["C"];
 
                         return new List<string> {
                         Parameter,
