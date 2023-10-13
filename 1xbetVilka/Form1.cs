@@ -61,10 +61,13 @@ namespace _1xbetVilka {
             wc.Encoding = Encoding.UTF8;
             Console.OutputEncoding = Encoding.UTF8;
 
+            string domain = textBox5.Text;
+            string url = $"https://{domain}/service-api/LiveFeed/Get1x2_VZip?sports=3&count=50&mode=4&country=2";
+
             wc.Headers.Add("Cookie", "lng=ru; SESSION=" + textBox8.Text);
             wc.Headers.Add("X-Requested-With", "XMLHttpRequest");
 
-            var usid1 = textBox1.Text.Split(':')[0];
+            string userId = textBox1.Text.Split(':')[0];
 
             if (!File.Exists(path)) {
                 File.Create(path).Close();
@@ -72,20 +75,38 @@ namespace _1xbetVilka {
 
             linksold = File.ReadAllText(path);
 
-            File.WriteAllText(usersets, usid1 + ";" + textBox12.Text + ";" + textBox5.Text);
+            File.WriteAllText(usersets, userId + ";" + textBox12.Text + ";" + textBox5.Text);
+
+            string[] leagueInclude = ProcessingLeagues(textBox4.Text);
+            string[] leagueExclude = ProcessingLeagues(textBox2.Text);
+
+            string leagueInc = "";
+            string leagueExc = "";
+
+            foreach (string league in leagueInclude) {
+                leagueInc += $"\"{league}\", ";
+            }
+            leagueInc = leagueInc.TrimEnd(',');
+
+            foreach (string league in leagueExclude) {
+                leagueExc += $"\"{league}\", ";
+            }
+            leagueExc = leagueExc.TrimEnd(',');
+
+            Invoke((MethodInvoker)delegate () {
+                textBox9.AppendText($"Лиги включенные в обработку: {leagueInc}" + Environment.NewLine);
+                textBox9.AppendText($"Лиги исключенные из обработки: {leagueExc}" + Environment.NewLine);
+            });
 
             while (f) {
                 try {
                     Invoke((MethodInvoker)delegate () { textBox3.Text = "Работаю..."; });
 
-                    var domain = textBox5.Text;
-                    string url = $"https://{domain}/service-api/LiveFeed/Get1x2_VZip?sports=3&count=50&mode=4&country=2";
-
                     List<Match> matches = GetMatches(wc, url);
 
                     foreach (var match in matches) {
 
-                        bool matchBool = CheckMatch(match);
+                        bool matchBool = CheckMatch(match, leagueInclude, leagueExclude);
                         Console.WriteLine($"Делаем ставку на этот матч? {matchBool}");
 
                         if (matchBool) {
@@ -103,11 +124,11 @@ namespace _1xbetVilka {
                                 otchet_str, 
                                 "10",
                                 match.GameId, 
-                                domain, 
                                 textBox12.Text, 
-                                usid1, 
                                 summ, 
-                                match.Parameter);
+                                match.Parameter,
+                                domain,
+                                userId);
                             
                         }
 
@@ -143,7 +164,7 @@ namespace _1xbetVilka {
 
 
         private Boolean MakeStavka(WebClient wb, string kf, string link, string type,
-                            string game_id, string domain, string uhash, string usid, string summ, string par = "0") {
+                            string game_id, string uhash, string summ, string par, string domain, string userId) {
 
             try {
                 if (Convert.ToInt32(summ) < 10) { summ = "10"; }
@@ -169,7 +190,7 @@ namespace _1xbetVilka {
                                 {"Live", true },
                                 {"Summ" , Int64.Parse(summ) },
                                 {"Lng" , "ru" },
-                                {"UserId" , Int64.Parse(usid) },
+                                {"UserId" , Int64.Parse(userId) },
                                 {"Vid" , 0 },
                                 {"hash" , uhash },
                                 {"CfView" , 0 },
@@ -337,18 +358,17 @@ namespace _1xbetVilka {
             }
         }
 
-        private bool CheckMatch(Match match) {
-            var ligas_set_inc = textBox4.Text.Split(',');
-            var ligas_set_ex = textBox2.Text.Split(',');
+        private bool CheckMatch(Match match, string[] leagueInclude, string[] leagueExclude) {
+
             int scoreDifference = Math.Abs(match.Score1 - match.Score2);
 
-            OutputMatchLog(match.Liga, scoreDifference, match.Command1, match.Command2, ligas_set_inc, ligas_set_ex);
+            OutputMatchLog(match.Liga, scoreDifference, match.Command1, match.Command2, leagueInclude, leagueExclude);
 
             if ((scoreDifference >= (int)numericUpDown1.Value && scoreDifference <= (int)numericUpDown3.Value) && !linksold.Contains(match.GameId)) {
                 var liga_bool = false;
 
-                if (ligas_set_inc[0] != "") {
-                    foreach (var liga_elem in ligas_set_inc) {
+                if (leagueInclude[0] != "") {
+                    foreach (var liga_elem in leagueInclude) {
                         if (match.Liga.Contains(liga_elem)) {
                             liga_bool = true;
                             break;
@@ -358,8 +378,8 @@ namespace _1xbetVilka {
                     liga_bool = true;
                 }
 
-                if (ligas_set_ex[0] != "") {
-                    foreach (var liga_elem in ligas_set_ex) {
+                if (leagueExclude[0] != "") {
+                    foreach (var liga_elem in leagueExclude) {
                         if (match.Liga.Contains(liga_elem)) {
                             liga_bool = false;
                             break;
@@ -476,6 +496,17 @@ namespace _1xbetVilka {
                 }
             }
             return new List<string> { Parameter, Coefficient };
+        }
+
+
+        private string[] ProcessingLeagues(string stringOfLeagues) {
+            string[] leagues = stringOfLeagues.Split(',');
+
+            for (int i = 0; i < leagues.Length; i++) {
+                leagues[i] = leagues[i].Trim();
+            }
+
+            return leagues;
         }
 
 
